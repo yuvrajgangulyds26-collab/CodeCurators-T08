@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prediction History - Wildfire Portal</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <style>
+    body {
+      font-family: "Lato", sans-serif;
+      background: linear-gradient(135deg, #0a0a0a, #545353ff, #aaa7a7ff);
+      background-size: 400% 400%;
+      animation: bgFlow 18s ease infinite;
+      color: #fff;
+      min-height: 100vh;
+      padding-top: 70px;
+    }
+
+    @keyframes bgFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .custom-navbar {
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(15px);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .navbar-brand {
+      font-weight: 700;
+      background: linear-gradient(90deg, #ff6600, #00ffd5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-link {
+      color: #fff !important;
+      font-weight: 500;
+      margin-right: 1rem;
+    }
+
+    .nav-link:hover {
+      color: #00bcd4 !important;
+    }
+
+    .card {
+      border-radius: 20px;
+      backdrop-filter: blur(15px);
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+    }
+
+    table {
+      color: #fff;
+      vertical-align: middle;
+    }
+
+    .table thead {
+      background-color: rgba(255,255,255,0.1);
+    }
+
+    .badge {
+      font-size: 0.9rem;
+      padding: 0.4em 0.7em;
+    }
+
+    .badge-danger {
+      background-color: #d32f2f;
+    }
+
+    .badge-warning {
+      background-color: #fbc02d;
+    }
+
+    .badge-success {
+      background-color: #43a047;
+    }
+
+    .badge-secondary {
+      background-color: #757575;
+    }
+  </style>
+</head>
+<body>
+  <!-- 🔹 NAVBAR -->
+  <nav class="navbar navbar-expand-lg fixed-top custom-navbar">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand fs-4" href="/dashboard">Wildfire Portal</a>
+      <div class="collapse navbar-collapse justify-content-end">
+        <ul class="navbar-nav">
+          <li class="nav-item"><a href="/dashboard" class="nav-link">
+            <a href="{{ url_for('dashboard') }}" class="nav-link d-flex align-items-center">
+            <img src="{{ url_for('static', filename='images/undraw_dashboard_p93p.svg') }}" 
+            alt="" 
+            style="width: 20px; height: 20px; margin-right: 8px;">
+            <span>Dashboard</span>
+          </li>
+          <li class="nav-item"> <a href="{{ url_for('logout') }}" class="nav-link d-flex align-items-center">
+              <img src="{{ url_for('static', filename='images/undraw_log-out_2vod.svg') }}" 
+              alt="" 
+              style="width: 20px; height: 20px; margin-right: 8px;">
+              <span>Logout</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-5">
+    <h2 class="text-center mb-4">Prediction History</h2>
+
+    <div class="card p-4">
+      <div class="table-responsive">
+        <table class="table table-borderless align-middle" id="historyTable">
+          <thead>
+            <tr>
+              <th scope="col">Timestamp</th>
+              <th scope="col">Latitude</th>
+              <th scope="col">Longitude</th>
+              <th scope="col">Risk Level</th>
+              <th scope="col">Predicted FRP</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="5" class="text-center text-muted">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadHistory() {
+      try {
+        const response = await fetch("/get_history");
+        const data = await response.json();
+
+        const tbody = document.getElementById("historyBody");
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No prediction history found.</td></tr>`;
+          return;
+        }
+
+        data.forEach(item => {
+          let riskBadge = `<span class="badge badge-secondary">Unknown</span>`;
+          if (item.fire_class === 0) riskBadge = `<span class="badge badge-success">No Fire Risk</span>`;
+          else if (item.predicted_frp < 50) riskBadge = `<span class="badge badge-warning">Small Fire</span>`;
+          else if (item.predicted_frp < 500) riskBadge = `<span class="badge badge-danger">Moderate</span>`;
+          else if (item.predicted_frp < 2000) riskBadge = `<span class="badge bg-danger">Large</span>`;
+          else riskBadge = `<span class="badge bg-dark">Extreme</span>`;
+
+          const row = `
+            <tr>
+              <td>${new Date(item.timestamp).toLocaleString()}</td>
+              <td>${item.latitude.toFixed(4)}</td>
+              <td>${item.longitude.toFixed(4)}</td>
+              <td>${riskBadge}</td>
+              <td>${item.predicted_frp.toFixed(2)} MW</td>
+            </tr>`;
+          tbody.innerHTML += row;
+        });
+
+      } catch (error) {
+        console.error("History load error:", error);
+        document.getElementById("historyBody").innerHTML =
+          `<tr><td colspan="5" class="text-center text-danger">Failed to load history.</td></tr>`;
+      }
+    }
+
+    loadHistory();
+  </script>
+</body>
+</html>

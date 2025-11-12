@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up | Wildfire Portal</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0a0a0f, #1a1a2e, #16213e);
+      background-size: 400% 400%;
+      animation: gradientShift 12s ease infinite;
+      color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 50px 40px;
+      width: 380px;
+      box-shadow: 0 0 40px rgba(0,0,0,0.4);
+      text-align: center;
+      transition: transform 0.4s ease;
+      position: relative;
+    }
+
+    .glass-card:hover {
+      transform: scale(1.02);
+    }
+
+    h2 {
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #fff;
+    }
+
+    .form-control {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: #fff;
+      border-radius: 12px;
+      padding: 12px 15px;
+      margin-bottom: 15px;
+    }
+
+    .form-control:focus {
+      background: rgba(255,255,255,0.25);
+      box-shadow: 0 0 10px rgba(0,188,212,0.4);
+      outline: none;
+    }
+
+    .btn-glow {
+      width: 100%;
+      background: linear-gradient(90deg, #00bcd4, #007bff);
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      border-radius: 25px;
+      padding: 12px 0;
+      transition: all 0.3s ease;
+    }
+
+    .btn-glow:hover {
+      box-shadow: 0 0 20px #00bcd4;
+      transform: scale(1.03);
+    }
+
+    .small-link {
+      display: block;
+      margin-top: 15px;
+      color: #bbb;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .small-link:hover {
+      color: #00bcd4;
+    }
+
+    .btn-sm {
+      background: linear-gradient(135deg, #f80707ff, #e1771bff, #a49937ff);
+      color: black;
+      height: 48px;
+      width: 55px;
+      border: none;
+      padding: 0;
+      margin: 0;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .btn-sm:hover {
+      background: linear-gradient(135deg, #4bf807ff, #1be192ff, #12bbd9ff);
+      color: gray;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    #strength {
+      font-size: 14px;
+      margin-bottom: 10px;
+      height: 20px;
+    }
+
+    /* Compact alert inside the card */
+    .alert {
+      font-size: 0.9rem;
+      padding: 10px 14px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .alert-success {
+      background-color: rgba(25, 135, 84, 0.15);
+      color: #4eff9d;
+      border: 1px solid rgba(25, 135, 84, 0.3);
+    }
+
+    .alert-danger {
+      background-color: rgba(220, 53, 69, 0.15);
+      color: #ff5c5c;
+      border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="glass-card">
+    <h2>Create Account</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form action="/signup" method="POST" id="signupForm">
+      <input type="text" name="fullname" class="form-control" placeholder="Full Name" required>
+
+      <div class="input-group mb-2">
+        <input type="email" id="email" name="email" class="form-control" placeholder="Email" required>
+        <button type="button" class="btn btn-sm" id="otpBtn">Get OTP</button>
+      </div>
+
+      <input type="text" id="otp" name="otp" class="form-control" placeholder="Enter OTP" required>
+      <input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
+      <div id="strength"></div>
+
+      <button type="submit" class="btn-glow">Sign Up</button>
+    </form>
+
+    <a href="{{ url_for('login') }}" class="small-link">Already have an account? Login</a>
+    <a href="{{ url_for('index') }}" class="small-link">Back to Home</a>
+  </div>
+
+  <script>
+    // Password strength indicator
+    const passwordInput = document.getElementById("password");
+    const strengthText = document.getElementById("strength");
+
+    passwordInput.addEventListener("input", () => {
+      const val = passwordInput.value;
+      let strength = "";
+      if (val.length < 8) {
+        strength = "Weak";
+        strengthText.style.color = "red";
+      } else if (/[A-Za-z]/.test(val) && /\d/.test(val) && val.length >= 8) {
+        strength = "Strong";
+        strengthText.style.color = "lime";
+      } else {
+        strength = "Medium";
+        strengthText.style.color = "orange";
+      }
+      strengthText.textContent = "Password Strength: " + strength;
+    });
+
+    // OTP Generator (backend call)
+document.getElementById("otpBtn").addEventListener("click", async () => {
+  const email = document.getElementById("email").value;
+  if (!email) {
+    showFlash("Please enter your email first!", "danger");
+    return;
+  }
+
+  try {
+    const res = await fetch("/generate_otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await res.json();
+
+    if (data.otp) {
+      showFlash(`OTP generated: ${data.otp}`, "success");  // ✅ show actual OTP
+    } else if (data.error) {
+      showFlash(`Error: ${data.error}`, "danger");
+    } else {
+      showFlash("Failed to generate OTP.", "danger");
+    }
+  } catch (err) {
+    showFlash("Server error while generating OTP.", "danger");
+  }
+}); 
+
+
+    // Frontend validation before submit
+    document.getElementById("signupForm").addEventListener("submit", (e) => {
+      const otp = document.getElementById("otp").value.trim();
+      const password = passwordInput.value.trim();
+      if (password.length < 8) {
+        e.preventDefault();
+        showFlash("Password too weak! Must be at least 8 characters.", "danger");
+        return;
+      }
+      if (!otp || otp.length < 4) {
+        e.preventDefault();
+        showFlash("Invalid OTP. Please check and try again.", "danger");
+      }
+    });
+
+    // Utility: show flash dynamically (client-side)
+    function showFlash(message, category = "success") {
+      const alert = document.createElement("div");
+      alert.className = `alert alert-${category} alert-dismissible fade show`;
+      alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      `;
+      const card = document.querySelector(".glass-card");
+      card.insertBefore(alert, card.children[1]); // show under heading
+      setTimeout(() => alert.classList.remove("show"), 4000); // fade out after 4s
+      setTimeout(() => alert.remove(), 4500);
+    }
+  </script>
+</body>
+</html>
