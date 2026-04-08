@@ -98,6 +98,7 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
+    <a href="{{ url_for('forgot_password') }}" class="small-link">Forgot your password?</a>
     <a href="{{ url_for('signup') }}" class="small-link">Don’t have an account? Sign up</a>
     <a href="{{ url_for('index') }}" class="small-link">← Back to Home</a>
   </div>

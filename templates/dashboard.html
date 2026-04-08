@@ -5,13 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wildfire Prediction Dashboard</title>
 
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <!-- MapLibre -->
   <link href="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 
   <style>
     body {
@@ -19,77 +18,66 @@
       min-height: 100vh;
       margin: 0;
       padding-top: 70px;
-      transition: background 1.5s ease-in-out;
-      background: linear-gradient(135deg, #0a0a0a, #545353ff, #aaa7a7ff);
+      background: linear-gradient(135deg, #0a0a0a, #545353, #aaa7a7);
       background-size: 400% 400%;
       animation: backgroundFlow 18s ease infinite;
       color: #fff;
       overflow-x: hidden;
+      transition: background 1.5s ease-in-out;
     }
-
     @keyframes backgroundFlow {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-
     body.fire-bg {
       background: linear-gradient(135deg, #3a0000, #ff3d00, #b80a0a);
       background-size: 400% 400%;
       animation: backgroundFlow 8s ease infinite;
     }
-
     body.safe-bg {
       background: linear-gradient(135deg, #001f12, #1ed1a1, #62ec6b);
       background-size: 400% 400%;
       animation: backgroundFlow 8s ease infinite;
     }
 
+    /* Navbar */
     .custom-navbar {
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(0,0,0,0.75);
       backdrop-filter: blur(15px);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
       z-index: 1000;
     }
-
     .navbar-brand {
       font-weight: 700;
       background: linear-gradient(90deg, #ff6600, #00ffd5);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-
     .nav-link {
       color: #fff !important;
       font-weight: 500;
       margin-right: 1rem;
       transition: color 0.3s;
     }
+    .nav-link:hover { color: #00bcd4 !important; }
 
-    .nav-link:hover {
-      color: #00bcd4 !important;
-    }
-
-    .container {
-      max-width: 850px;
-      margin-top: 100px;
-      position: relative;
-      z-index: 2;
-    }
-
+    /* Cards */
+    .container { max-width: 850px; position: relative; z-index: 2; }
     .card {
       border-radius: 20px;
       backdrop-filter: blur(15px);
-      background: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+      background: rgba(255,255,255,0.1);
+      box-shadow: 0 6px 25px rgba(0,0,0,0.4);
       border: 1px solid rgba(255,255,255,0.15);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-
     .card:hover {
-      transform: scale(1.02);
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      transform: scale(1.01);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
     }
 
+    /* Map */
     #map {
       width: 100%;
       height: 400px;
@@ -97,29 +85,41 @@
       margin-bottom: 15px;
     }
 
+    /* Buttons */
     .btn-primary {
       background: linear-gradient(90deg, #00bcd4, #007bff);
       border: none;
       font-weight: 600;
-      transition: transform 0.3s ease-in-out, background 0.3s;
+      transition: transform 0.3s ease, background 0.3s;
     }
-
     .btn-primary:hover {
       transform: scale(1.05);
       background: linear-gradient(90deg, #310dd0, #6148f2);
     }
+    .btn-action {
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      border-radius: 25px;
+      padding: 10px 24px;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      margin: 4px;
+    }
+    .btn-forecast { background: linear-gradient(90deg, #ff6600, #ff3d00); }
+    .btn-forecast:hover { box-shadow: 0 0 18px #ff6600; transform: scale(1.03); color:#fff; }
+    .btn-explain  { background: linear-gradient(90deg, #00bcd4, #0077aa); }
+    .btn-explain:hover  { box-shadow: 0 0 18px #00bcd4; transform: scale(1.03); color:#fff; }
 
+    /* Result */
     .result-card {
       border-radius: 25px;
       backdrop-filter: blur(20px);
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
       color: #fff;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-      position: relative;
-      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
-
     h2 {
       background: linear-gradient(90deg, #ee5a0a, #3df60a);
       -webkit-background-clip: text;
@@ -128,11 +128,43 @@
       text-align: center;
       margin-bottom: 1rem;
     }
+
+    /* Charts */
+    .chart-wrapper { position: relative; height: 300px; width: 100%; }
+    .explain-chart-wrapper { position: relative; height: 260px; }
+
+    /* Legend */
+    .legend-pill {
+      display: inline-block;
+      width: 13px; height: 13px;
+      border-radius: 50%;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    .legend-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: center;
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color: #ccc;
+    }
+
+    /* Forecast summary pills */
+    .forecast-summary { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:14px; }
+    .f-pill {
+      font-size: 0.78rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      color: #fff;
+      font-weight: 600;
+    }
   </style>
 </head>
 
 <body>
-  <!--NAVIGATION BAR-->
+  <!-- NAVBAR -->
   <nav class="navbar navbar-expand-lg fixed-top custom-navbar">
     <div class="container-fluid px-4">
       <a class="navbar-brand fs-4" href="#">Wildfire Portal</a>
@@ -143,36 +175,40 @@
         <ul class="navbar-nav">
           <li class="nav-item">
             <a href="{{ url_for('history') }}" class="nav-link d-flex align-items-center">
-              <img src="{{ url_for('static', filename='images/undraw_season-change_ohe6.svg') }}" 
-                  alt="" 
-                  style="width: 20px; height: 20px; margin-right: 8px;">
+              <img src="{{ url_for('static', filename='images/undraw_season-change_ohe6.svg') }}"
+                   alt="" style="width:20px;height:20px;margin-right:8px;">
               <span>History</span>
             </a>
           </li>
           <li class="nav-item">
+            <a href="{{ url_for('alerts_page') }}" class="nav-link d-flex align-items-center">
+              <img src="{{ url_for('static', filename='images/undraw_warnings_agxg.svg') }}"
+                   alt="" style="width:20px;height:20px;margin-right:8px;">
+              <span>Alerts</span>
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="{{ url_for('logout') }}" class="nav-link d-flex align-items-center">
-              <img src="{{ url_for('static', filename='images/undraw_log-out_2vod_2.svg') }}" 
-                  alt="" 
-                  style="width: 20px; height: 20px; margin-right: 8px;">
+              <img src="{{ url_for('static', filename='images/undraw_log-out_2vod_2.svg') }}"
+                   alt="" style="width:20px;height:20px;margin-right:8px;">
               <span>Logout</span>
             </a>
           </li>
-
         </ul>
       </div>
     </div>
   </nav>
 
-
-  <div class="container text-center">
+  <div class="container text-center mt-4 pb-5">
     <h2>Wildfire Prediction Dashboard</h2>
 
-    <div class="card p-3 mb-4 fade-in">
+    <!-- Map & Predict -->
+    <div class="card p-3 mb-4">
       <div class="fw-semibold mb-2">Select a Location on the Map</div>
       <div id="map"></div>
       <div class="row g-3">
         <div class="col-md-6">
-          <input id="latitude" type="number" step="any" class="form-control bg-dark text-light" placeholder="Latitude" readonly />
+          <input id="latitude"  type="number" step="any" class="form-control bg-dark text-light" placeholder="Latitude"  readonly />
         </div>
         <div class="col-md-6">
           <input id="longitude" type="number" step="any" class="form-control bg-dark text-light" placeholder="Longitude" readonly />
@@ -181,102 +217,397 @@
       <button id="predictBtn" class="btn btn-primary w-100 mt-3 py-2">Predict Fire Risk</button>
     </div>
 
+    <!-- Weather strip -->
     <div id="weatherSection" class="card p-4 mb-4 d-none text-start">
       <h5 class="text-info mb-3">Current Weather</h5>
       <div class="row text-center">
-        <div class="col"><p><strong>Temp:</strong> <span id="temp"></span>°C</p></div>
-        <div class="col"><p><strong>Humidity:</strong> <span id="humidity"></span>%</p></div>
-        <div class="col"><p><strong>Wind:</strong> <span id="wind"></span> km/h</p></div>
-        <div class="col"><p><strong>Rain:</strong> <span id="rain"></span> mm</p></div>
+        <div class="col"><p><strong>Temp</strong><br><span id="temp"></span> °C</p></div>
+        <div class="col"><p><strong>Humidity</strong><br><span id="humidity"></span> %</p></div>
+        <div class="col"><p><strong>Wind</strong><br><span id="wind"></span> km/h</p></div>
+        <div class="col"><p><strong>Rain</strong><br><span id="rain"></span> mm</p></div>
       </div>
     </div>
 
+    <!-- Prediction result -->
     <div id="resultSection" class="result-card p-5 mb-4 d-none text-center">
       <h4 id="fireLabel" class="fw-bold"></h4>
       <h6 id="riskLevel" class="mt-2"></h6>
     </div>
-  </div>
+
+    <!-- Action buttons (appear after prediction) -->
+    <div id="actionBtnWrapper" class="text-center mb-3 d-none">
+      <button class="btn-action btn-forecast" id="forecastBtn" onclick="loadForecast()">
+        <img src="{{ url_for('static', filename='images/undraw_time-change_lyxp.svg') }}"
+                   alt="" style="width:20px;height:20px;margin-right:8px;"> Show 24-Hour Forecast
+      </button>
+      <button class="btn-action btn-explain" id="explainBtn" onclick="loadExplain()">
+        <img src="{{ url_for('static', filename='images/undraw_thinking-mode_7czd.svg') }}"
+                   alt="" style="width:20px;height:20px;margin-right:8px;"> Why This Prediction?
+      </button>
+    </div>
+
+    <!-- Forecast chart -->
+    <div id="forecastSection" class="card p-4 mb-4 d-none">
+      <h5 class="text-warning mb-1">24-Hour Fire Risk Forecast</h5>
+      <p class="text-muted" style="font-size:0.85rem;margin-bottom:16px;">
+        Predicted FRP for each hour based on forecast weather. Dashed lines mark risk thresholds.
+      </p>
+      <div id="forecastSpinner" class="text-center py-3 d-none">
+        <div class="spinner-border text-warning" role="status"></div>
+        <p class="mt-2 text-muted" style="font-size:0.85rem">Running forecast models…</p>
+      </div>
+      <div id="forecastChartWrapper" class="chart-wrapper d-none">
+        <canvas id="forecastChart"></canvas>
+      </div>
+      <div id="forecastSummary" class="forecast-summary d-none"></div>
+      <div class="legend-row mt-2">
+        <span><span class="legend-pill" style="background:#43a047"></span>No Fire</span>
+        <span><span class="legend-pill" style="background:#fbc02d"></span>Small (&lt;50 MW)</span>
+        <span><span class="legend-pill" style="background:#fd7e14"></span>Moderate (&lt;500 MW)</span>
+        <span><span class="legend-pill" style="background:#d32f2f"></span>Large (&lt;2000 MW)</span>
+        <span><span class="legend-pill" style="background:#4a0000;border:1px solid #d32f2f"></span>Extreme</span>
+      </div>
+    </div>
+
+    <!-- Explainable AI panel -->
+    <div id="explainSection" class="card p-4 mb-4 d-none">
+      <h5 class="text-info mb-1">Why This Prediction?</h5>
+      <p class="text-muted" style="font-size:0.85rem;margin-bottom:16px;">
+        Top factors driving the fire risk classification and FRP estimate.
+        Longer bar = stronger influence on the model's decision.
+      </p>
+      <div id="explainSpinner" class="text-center py-3 d-none">
+        <div class="spinner-border text-info" role="status"></div>
+        <p class="mt-2 text-muted" style="font-size:0.85rem">Analysing feature importances…</p>
+      </div>
+      <div id="explainCharts" class="d-none">
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <h6 class="text-warning text-center mb-3">FRP Estimate — Regression Model</h6>
+            <div class="explain-chart-wrapper">
+              <canvas id="regChart"></canvas>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <h6 class="text-warning text-center mb-3">Fire/No-Fire — Ensemble Classifier</h6>
+            <div class="explain-chart-wrapper">
+              <canvas id="ensChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <p class="text-muted text-center" style="font-size:0.78rem;margin-top:-8px;">
+          Classification importances are averaged across the three Random Forest estimators inside the ensemble.
+        </p>
+      </div>
+    </div>
+
+  </div><!-- /container -->
 
   <script>
     const MAPTILER_KEY = "L8UyX3M5BbrojjqNOfDc";
 
-    // Initialize Map
+    // Map
     const map = new maplibregl.Map({
       container: "map",
-      style: `https://api.maptiler.com/maps/streets-v2/style.json?key=${MAPTILER_KEY}`,
-      center: [88.3639, 22.5726],
-      zoom: 5,
+      style:     `https://api.maptiler.com/maps/streets-v2/style.json?key=${MAPTILER_KEY}`,
+      center:    [88.3639, 22.5726],
+      zoom:      5,
     });
     map.addControl(new maplibregl.NavigationControl(), "top-right");
 
-    let marker = null;
+    let marker         = null;
+    let selectedLat    = null;
+    let selectedLon    = null;
+    let forecastChart  = null;
+    let forecastVisible= false;
+    let regChartInst   = null;
+    let ensChartInst   = null;
+    let explainVisible = false;
+
     map.on("click", (e) => {
-      const lat = e.lngLat.lat.toFixed(5);
-      const lon = e.lngLat.lng.toFixed(5);
-      document.getElementById("latitude").value = lat;
-      document.getElementById("longitude").value = lon;
+      selectedLat = parseFloat(e.lngLat.lat.toFixed(5));
+      selectedLon = parseFloat(e.lngLat.lng.toFixed(5));
+      document.getElementById("latitude").value  = selectedLat;
+      document.getElementById("longitude").value = selectedLon;
       if (marker) marker.remove();
-      marker = new maplibregl.Marker({ color: "#00e5ff" }).setLngLat([lon, lat]).addTo(map);
+      marker = new maplibregl.Marker({ color: "#00e5ff" })
+        .setLngLat([selectedLon, selectedLat]).addTo(map);
+      resetResults();
     });
 
-    document.getElementById("predictBtn").addEventListener("click", async () => {
-      const lat = parseFloat(document.getElementById("latitude").value);
-      const lon = parseFloat(document.getElementById("longitude").value);
+    // ── Risk helpers ─────────────────────────────────────────
+    function getRiskColour(fireClass, frp) {
+      if (fireClass === 0) return "#43a047";
+      if (frp < 50)        return "#fbc02d";
+      if (frp < 500)       return "#fd7e14";
+      if (frp < 2000)      return "#d32f2f";
+      return "#4a0000";
+    }
 
-      if (isNaN(lat) || isNaN(lon)) {
+    function getRiskLabel(fireClass, frp) {
+      if (fireClass === 0) return "No Fire Risk";
+      if (frp < 50)        return "Small Fire";
+      if (frp < 500)       return "Moderate";
+      if (frp < 2000)      return "Large";
+      return "Extreme";
+    }
+
+    // ── Reset ────────────────────────────────────────────────
+    function resetResults() {
+      ["weatherSection","resultSection","actionBtnWrapper",
+       "forecastSection","explainSection"].forEach(id =>
+        document.getElementById(id).classList.add("d-none"));
+      document.body.classList.remove("fire-bg","safe-bg");
+      if (forecastChart)  { forecastChart.destroy();  forecastChart  = null; }
+      if (regChartInst)   { regChartInst.destroy();   regChartInst   = null; }
+      if (ensChartInst)   { ensChartInst.destroy();   ensChartInst   = null; }
+      forecastVisible = false;
+      explainVisible  = false;
+      document.getElementById("forecastBtn").textContent = "🔮 Show 24-Hour Forecast";
+      document.getElementById("explainBtn").textContent  = "🧠 Why This Prediction?";
+    }
+
+    // ── Predict ──────────────────────────────────────────────
+    document.getElementById("predictBtn").addEventListener("click", async () => {
+      if (selectedLat === null || selectedLon === null) {
         alert("Please select a location on the map first!");
         return;
       }
+      const btn = document.getElementById("predictBtn");
+      btn.disabled = true;
+      btn.textContent = "Predicting…";
 
       try {
-        const response = await fetch("/predict", {
+        const res = await fetch("/predict", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ lat, lon }),
+          body: JSON.stringify({ lat: selectedLat, lon: selectedLon }),
         });
-
-        if (!response.ok) throw new Error(`Server error ${response.status}`);
-
-        const data = await response.json();
-        console.log("Prediction Data:", data);
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+        const data = await res.json();
 
         const w = data.weather;
-        document.getElementById("temp").textContent = w.temperature_2m.toFixed(1);
+        document.getElementById("temp").textContent     = w.temperature_2m.toFixed(1);
         document.getElementById("humidity").textContent = w.relative_humidity_2m.toFixed(0);
-        document.getElementById("wind").textContent = w.windspeed_10m.toFixed(1);
-        document.getElementById("rain").textContent = w.precipitation.toFixed(1);
+        document.getElementById("wind").textContent     = w.windspeed_10m.toFixed(1);
+        document.getElementById("rain").textContent     = w.precipitation.toFixed(1);
         document.getElementById("weatherSection").classList.remove("d-none");
 
         const fireClass = data.fire_class;
-        const frp = data.predicted_frp ?? 0;
-        let label = "", riskText = "";
-
-        if (fireClass === 0) {
-          label = "No Fire Risk Detected";
-          riskText = "Area appears safe based on current conditions.";
-          document.body.classList.remove("fire-bg");
-          document.body.classList.add("safe-bg");
-        } else {
-          document.body.classList.remove("safe-bg");
-          document.body.classList.add("fire-bg");
-
-          if (frp < 50) label = "Small Fire Risk";
-          else if (frp < 500) label = "Moderate Fire Risk";
-          else if (frp < 2000) label = "Large Fire Risk";
-          else label = "Extreme Fire Risk";
-
-          riskText = `Estimated Fire Radiative Power: ${frp.toFixed(2)} MW`;
-        }
-
-        document.getElementById("fireLabel").textContent = label;
-        document.getElementById("riskLevel").textContent = riskText;
+        const frp       = data.predicted_frp ?? 0;
+        document.getElementById("fireLabel").textContent = getRiskLabel(fireClass, frp);
+        document.getElementById("riskLevel").textContent = fireClass === 0
+          ? "Area appears safe based on current conditions."
+          : `Estimated Fire Radiative Power: ${frp.toFixed(2)} MW`;
         document.getElementById("resultSection").classList.remove("d-none");
+
+        document.body.classList.remove("fire-bg","safe-bg");
+        document.body.classList.add(fireClass === 0 ? "safe-bg" : "fire-bg");
+
+        document.getElementById("actionBtnWrapper").classList.remove("d-none");
 
       } catch (err) {
         console.error("Prediction failed:", err);
         alert("Prediction failed — check console or Flask logs.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Predict Fire Risk";
       }
     });
+
+    // ── Forecast ─────────────────────────────────────────────
+    async function loadForecast() {
+      if (forecastVisible) {
+        document.getElementById("forecastSection").classList.add("d-none");
+        document.getElementById("forecastBtn").textContent = "🔮 Show 24-Hour Forecast";
+        forecastVisible = false;
+        return;
+      }
+      const section = document.getElementById("forecastSection");
+      section.classList.remove("d-none");
+      document.getElementById("forecastSpinner").classList.remove("d-none");
+      document.getElementById("forecastChartWrapper").classList.add("d-none");
+      document.getElementById("forecastSummary").classList.add("d-none");
+      document.getElementById("forecastBtn").textContent = "⏳ Loading…";
+
+      try {
+        const res = await fetch("/forecast", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat: selectedLat, lon: selectedLon }),
+        });
+        if (!res.ok) throw new Error(`Forecast error ${res.status}`);
+        const slots = await res.json();
+
+        document.getElementById("forecastSpinner").classList.add("d-none");
+        document.getElementById("forecastChartWrapper").classList.remove("d-none");
+        document.getElementById("forecastSummary").classList.remove("d-none");
+        buildForecastChart(slots);
+        buildForecastSummary(slots);
+        document.getElementById("forecastBtn").textContent = "🔮 Hide 24-Hour Forecast";
+        forecastVisible = true;
+
+      } catch (err) {
+        console.error("Forecast failed:", err);
+        document.getElementById("forecastSpinner").classList.add("d-none");
+        section.classList.add("d-none");
+        alert("Forecast failed — check console.");
+        document.getElementById("forecastBtn").textContent = "🔮 Show 24-Hour Forecast";
+      }
+    }
+
+    function buildForecastChart(slots) {
+      if (forecastChart) { forecastChart.destroy(); forecastChart = null; }
+      const ctx = document.getElementById("forecastChart").getContext("2d");
+      forecastChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels:   slots.map(s => s.hour_label),
+          datasets: [{
+            data:                 slots.map(s => s.predicted_frp),
+            borderColor:          "rgba(255,255,255,0.3)",
+            borderWidth:          2,
+            pointBackgroundColor: slots.map(s => getRiskColour(s.fire_class, s.predicted_frp)),
+            pointBorderColor:     "#fff",
+            pointBorderWidth:     1.5,
+            pointRadius:          6,
+            pointHoverRadius:     9,
+            tension:              0.35,
+            fill:                 false,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode:"index", intersect:false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: "rgba(0,0,0,0.8)",
+              titleColor: "#ff9800", bodyColor: "#fff", padding: 10,
+              callbacks: {
+                label(ctx) {
+                  const s = slots[ctx.dataIndex];
+                  return [
+                    `FRP: ${ctx.parsed.y.toFixed(2)} MW`,
+                    `Risk: ${getRiskLabel(s.fire_class, s.predicted_frp)}`,
+                    `Temp: ${s.temperature}°C  Humidity: ${s.humidity}%`,
+                    `Wind: ${s.wind} km/h  Rain: ${s.rain} mm`,
+                  ];
+                }
+              }
+            },
+            annotation: {
+              annotations: {
+                small:    { type:"line", yMin:50,   yMax:50,   borderColor:"#fbc02d", borderWidth:1.5, borderDash:[6,4], label:{display:true,content:"Small (50 MW)",   color:"#fbc02d",font:{size:11},position:"end",yAdjust:-10}},
+                moderate: { type:"line", yMin:500,  yMax:500,  borderColor:"#fd7e14", borderWidth:1.5, borderDash:[6,4], label:{display:true,content:"Moderate (500 MW)",color:"#fd7e14",font:{size:11},position:"end",yAdjust:-10}},
+                large:    { type:"line", yMin:2000, yMax:2000, borderColor:"#d32f2f", borderWidth:1.5, borderDash:[6,4], label:{display:true,content:"Large (2000 MW)",  color:"#d32f2f",font:{size:11},position:"end",yAdjust:-10}},
+              }
+            }
+          },
+          scales: {
+            x: { ticks:{color:"#ccc",maxRotation:35,font:{size:11},maxTicksLimit:12}, grid:{color:"rgba(255,255,255,0.08)"} },
+            y: { beginAtZero:true, ticks:{color:"#ccc",callback:v=>`${v} MW`}, grid:{color:"rgba(255,255,255,0.08)"}, title:{display:true,text:"FRP (MW)",color:"#aaa",font:{size:12}} }
+          }
+        }
+      });
+    }
+
+    function buildForecastSummary(slots) {
+      const counts  = {"No Fire Risk":0,"Small Fire":0,"Moderate":0,"Large":0,"Extreme":0};
+      const colours = {"No Fire Risk":"#43a047","Small Fire":"#fbc02d","Moderate":"#fd7e14","Large":"#d32f2f","Extreme":"#4a0000"};
+      slots.forEach(s => counts[getRiskLabel(s.fire_class, s.predicted_frp)]++);
+      const el = document.getElementById("forecastSummary");
+      el.innerHTML = `<small class="text-muted w-100 text-center mb-1">Next 24 hours:</small>`;
+      Object.entries(counts).forEach(([label, count]) => {
+        if (count === 0) return;
+        el.innerHTML += `<span class="f-pill" style="background:${colours[label]}">${label}: ${count}h</span>`;
+      });
+    }
+
+    // ── Explainable AI ───────────────────────────────────────
+    async function loadExplain() {
+      if (explainVisible) {
+        document.getElementById("explainSection").classList.add("d-none");
+        document.getElementById("explainBtn").textContent = "🧠 Why This Prediction?";
+        explainVisible = false;
+        return;
+      }
+      const section = document.getElementById("explainSection");
+      section.classList.remove("d-none");
+      document.getElementById("explainSpinner").classList.remove("d-none");
+      document.getElementById("explainCharts").classList.add("d-none");
+      document.getElementById("explainBtn").textContent = "⏳ Analysing…";
+
+      try {
+        const res = await fetch("/explain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat: selectedLat, lon: selectedLon }),
+        });
+        if (!res.ok) throw new Error(`Explain error ${res.status}`);
+        const data = await res.json();
+
+        document.getElementById("explainSpinner").classList.add("d-none");
+        document.getElementById("explainCharts").classList.remove("d-none");
+
+        regChartInst = buildHBarChart("regChart", regChartInst,
+          data.regression_importances, "rgba(0,188,212,0.75)", "rgba(0,188,212,1)");
+        ensChartInst = buildHBarChart("ensChart", ensChartInst,
+          data.ensemble_importances,   "rgba(255,152,0,0.75)", "rgba(255,152,0,1)");
+
+        document.getElementById("explainBtn").textContent = "🧠 Hide Explanation";
+        explainVisible = true;
+
+      } catch (err) {
+        console.error("Explain failed:", err);
+        document.getElementById("explainSpinner").classList.add("d-none");
+        section.classList.add("d-none");
+        alert("Explanation failed — check console.");
+        document.getElementById("explainBtn").textContent = "🧠 Why This Prediction?";
+      }
+    }
+
+    function buildHBarChart(canvasId, oldChart, items, bgColour, borderColour) {
+      if (oldChart) { oldChart.destroy(); }
+      const ctx = document.getElementById(canvasId).getContext("2d");
+      return new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: items.map(d => d.feature),
+          datasets: [{
+            data:            items.map(d => d.pct),
+            backgroundColor: bgColour,
+            borderColor:     borderColour,
+            borderWidth:     1,
+            borderRadius:    6,
+          }]
+        },
+        options: {
+          indexAxis: "y",
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: "rgba(0,0,0,0.8)",
+              callbacks: { label: ctx => ` ${ctx.parsed.x.toFixed(1)}% of top-feature influence` }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true, max: 100,
+              ticks: { color:"#ccc", callback: v=>`${v}%` },
+              grid:  { color:"rgba(255,255,255,0.08)" }
+            },
+            y: {
+              ticks: { color:"#ddd", font:{ size:11 } },
+              grid:  { color:"rgba(255,255,255,0.05)" }
+            }
+          }
+        }
+      });
+    }
   </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

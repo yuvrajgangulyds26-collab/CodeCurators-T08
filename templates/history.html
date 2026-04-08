@@ -9,11 +9,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
   <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Chart.js Annotation plugin (threshold lines) -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 
   <style>
     body {
       font-family: "Lato", sans-serif;
-      background: linear-gradient(135deg, #0a0a0a, #545353ff, #aaa7a7ff);
+      background: linear-gradient(135deg, #0a0a0a, #545353, #aaa7a7);
       background-size: 400% 400%;
       animation: bgFlow 18s ease infinite;
       color: #fff;
@@ -22,8 +26,8 @@
     }
 
     @keyframes bgFlow {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
 
@@ -44,11 +48,10 @@
       color: #fff !important;
       font-weight: 500;
       margin-right: 1rem;
+      transition: color 0.3s;
     }
 
-    .nav-link:hover {
-      color: #00bcd4 !important;
-    }
+    .nav-link:hover { color: #00bcd4 !important; }
 
     .card {
       border-radius: 20px;
@@ -58,126 +61,377 @@
       color: #fff;
     }
 
-    table {
+    table { color: #fff; vertical-align: middle; }
+
+    .table thead { background-color: rgba(255,255,255,0.1); }
+
+    .badge { font-size: 0.85rem; padding: 0.4em 0.75em; }
+
+    h2 {
+      background: linear-gradient(90deg, #ee5a0a, #3df60a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 700;
+    }
+
+    /* Toggle button */
+    .btn-toggle-chart {
+      background: linear-gradient(90deg, #00bcd4, #007bff);
+      border: none;
       color: #fff;
+      font-weight: 600;
+      border-radius: 25px;
+      padding: 10px 28px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-toggle-chart:hover {
+      box-shadow: 0 0 18px #00bcd4;
+      transform: scale(1.03);
+      color: #fff;
+    }
+
+    /* Chart container */
+    .chart-wrapper {
+      position: relative;
+      height: 340px;
+      width: 100%;
+    }
+
+    /* Legend pills below chart */
+    .legend-pill {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      margin-right: 5px;
       vertical-align: middle;
     }
 
-    .table thead {
-      background-color: rgba(255,255,255,0.1);
-    }
-
-    .badge {
-      font-size: 0.9rem;
-      padding: 0.4em 0.7em;
-    }
-
-    .badge-danger {
-      background-color: #d32f2f;
-    }
-
-    .badge-warning {
-      background-color: #fbc02d;
-    }
-
-    .badge-success {
-      background-color: #43a047;
-    }
-
-    .badge-secondary {
-      background-color: #757575;
+    .legend-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: #ccc;
     }
   </style>
 </head>
 <body>
-  <!-- 🔹 NAVBAR -->
+
+  <!-- NAVBAR -->
   <nav class="navbar navbar-expand-lg fixed-top custom-navbar">
     <div class="container-fluid px-4">
-      <a class="navbar-brand fs-4" href="/dashboard">Wildfire Portal</a>
-      <div class="collapse navbar-collapse justify-content-end">
+      <a class="navbar-brand fs-4" href="{{ url_for('dashboard') }}">Wildfire Portal</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
         <ul class="navbar-nav">
-          <li class="nav-item"><a href="/dashboard" class="nav-link">
+          <li class="nav-item">
             <a href="{{ url_for('dashboard') }}" class="nav-link d-flex align-items-center">
-            <img src="{{ url_for('static', filename='images/undraw_dashboard_p93p.svg') }}" 
-            alt="" 
-            style="width: 20px; height: 20px; margin-right: 8px;">
-            <span>Dashboard</span>
+              <img src="{{ url_for('static', filename='images/undraw_dashboard_p93p.svg') }}"
+                   alt="" style="width:20px; height:20px; margin-right:8px;">
+              <span>Dashboard</span>
+            </a>
           </li>
-          <li class="nav-item"> <a href="{{ url_for('logout') }}" class="nav-link d-flex align-items-center">
-              <img src="{{ url_for('static', filename='images/undraw_log-out_2vod.svg') }}" 
-              alt="" 
-              style="width: 20px; height: 20px; margin-right: 8px;">
+          <li class="nav-item">
+            <a href="{{ url_for('logout') }}" class="nav-link d-flex align-items-center">
+              <img src="{{ url_for('static', filename='images/undraw_log-out_2vod.svg') }}"
+                   alt="" style="width:20px; height:20px; margin-right:8px;">
               <span>Logout</span>
+            </a>
           </li>
         </ul>
       </div>
     </div>
   </nav>
 
-  <div class="container mt-5">
+  <div class="container mt-5 pb-5">
     <h2 class="text-center mb-4">Prediction History</h2>
 
-    <div class="card p-4">
+    <!-- History Table -->
+    <div class="card p-4 mb-4">
       <div class="table-responsive">
         <table class="table table-borderless align-middle" id="historyTable">
           <thead>
             <tr>
-              <th scope="col">Timestamp</th>
-              <th scope="col">Latitude</th>
-              <th scope="col">Longitude</th>
-              <th scope="col">Risk Level</th>
-              <th scope="col">Predicted FRP</th>
+              <th>Timestamp</th>
+              <th>Latitude</th>
+              <th>Longitude</th>
+              <th>Risk Level</th>
+              <th>Predicted FRP</th>
             </tr>
           </thead>
           <tbody id="historyBody">
-            <tr><td colspan="5" class="text-center text-muted">Loading...</td></tr>
+            <tr>
+              <td colspan="5" class="text-center text-muted">Loading...</td>
+            </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Chart Toggle Button — hidden until data loads -->
+    <div class="text-center mb-3" id="chartToggleWrapper" style="display:none">
+      <button class="btn-toggle-chart" id="toggleChartBtn" onclick="toggleChart()">
+        <img src="{{ url_for('static', filename='images/undraw_visual-data_1eya.svg') }}"
+                   alt="" style="width:20px; height:20px; margin-right:8px;" Show Risk Trend
+      </button>
+    </div>
+
+    <!-- Chart Section -->
+    <div id="chartSection" class="card p-4 d-none">
+      <h5 class="text-info mb-1">Fire Radiative Power Over Time</h5>
+      <p class="text-muted" style="font-size:0.85rem; margin-bottom:16px;">
+        Each point is one prediction. Dashed lines mark risk thresholds.
+      </p>
+
+      <div class="chart-wrapper">
+        <canvas id="trendChart"></canvas>
+      </div>
+
+      <!-- Manual colour legend -->
+      <div class="legend-row">
+        <span><span class="legend-pill" style="background:#43a047"></span>No Fire</span>
+        <span><span class="legend-pill" style="background:#fbc02d"></span>Small (&lt;50 MW)</span>
+        <span><span class="legend-pill" style="background:#fd7e14"></span>Moderate (&lt;500 MW)</span>
+        <span><span class="legend-pill" style="background:#d32f2f"></span>Large (&lt;2000 MW)</span>
+        <span><span class="legend-pill" style="background:#4a0000; border:1px solid #d32f2f"></span>Extreme (≥2000 MW)</span>
       </div>
     </div>
   </div>
 
   <script>
+    let trendChartInstance = null;
+    let chartVisible       = false;
+    let historyData        = [];
+
+    // ── Risk helpers ───────────────────────────────────────
+    function getRiskColour(item) {
+      if (item.fire_class === 0)           return "#43a047";
+      if (item.predicted_frp < 50)         return "#fbc02d";
+      if (item.predicted_frp < 500)        return "#fd7e14";
+      if (item.predicted_frp < 2000)       return "#d32f2f";
+      return "#4a0000";
+    }
+
+    function getRiskLabel(item) {
+      if (item.fire_class === 0)           return "No Fire Risk";
+      if (item.predicted_frp < 50)         return "Small Fire";
+      if (item.predicted_frp < 500)        return "Moderate";
+      if (item.predicted_frp < 2000)       return "Large";
+      return "Extreme";
+    }
+
+    function getRiskBadge(item) {
+      if (item.fire_class === 0)
+        return `<span class="badge bg-success">No Fire Risk</span>`;
+      if (item.predicted_frp < 50)
+        return `<span class="badge bg-warning text-dark">Small Fire</span>`;
+      if (item.predicted_frp < 500)
+        return `<span class="badge text-dark" style="background-color:#fd7e14">Moderate</span>`;
+      if (item.predicted_frp < 2000)
+        return `<span class="badge bg-danger">Large</span>`;
+      return `<span class="badge bg-dark border border-danger">Extreme</span>`;
+    }
+
+    // ── Load history ───────────────────────────────────────
     async function loadHistory() {
       try {
         const response = await fetch("/get_history");
-        const data = await response.json();
-
-        const tbody = document.getElementById("historyBody");
+        historyData    = await response.json();
+        const tbody    = document.getElementById("historyBody");
         tbody.innerHTML = "";
 
-        if (data.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No prediction history found.</td></tr>`;
+        if (historyData.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="text-center text-muted">No prediction history found.</td>
+            </tr>`;
           return;
         }
 
-        data.forEach(item => {
-          let riskBadge = `<span class="badge badge-secondary">Unknown</span>`;
-          if (item.fire_class === 0) riskBadge = `<span class="badge badge-success">No Fire Risk</span>`;
-          else if (item.predicted_frp < 50) riskBadge = `<span class="badge badge-warning">Small Fire</span>`;
-          else if (item.predicted_frp < 500) riskBadge = `<span class="badge badge-danger">Moderate</span>`;
-          else if (item.predicted_frp < 2000) riskBadge = `<span class="badge bg-danger">Large</span>`;
-          else riskBadge = `<span class="badge bg-dark">Extreme</span>`;
-
-          const row = `
+        historyData.forEach(item => {
+          tbody.innerHTML += `
             <tr>
               <td>${new Date(item.timestamp).toLocaleString()}</td>
               <td>${item.latitude.toFixed(4)}</td>
               <td>${item.longitude.toFixed(4)}</td>
-              <td>${riskBadge}</td>
+              <td>${getRiskBadge(item)}</td>
               <td>${item.predicted_frp.toFixed(2)} MW</td>
             </tr>`;
-          tbody.innerHTML += row;
         });
+
+        // Reveal toggle button now that we have data
+        document.getElementById("chartToggleWrapper").style.display = "block";
 
       } catch (error) {
         console.error("History load error:", error);
-        document.getElementById("historyBody").innerHTML =
-          `<tr><td colspan="5" class="text-center text-danger">Failed to load history.</td></tr>`;
+        document.getElementById("historyBody").innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center text-danger">Failed to load history.</td>
+          </tr>`;
+      }
+    }
+
+    // ── Build chart (called once on first toggle) ──────────
+    function buildChart() {
+      // Reverse so chart goes oldest → newest left to right
+      const sorted  = [...historyData].reverse();
+      const labels  = sorted.map(d => new Date(d.timestamp).toLocaleString());
+      const frpVals = sorted.map(d => d.predicted_frp);
+      const colours = sorted.map(d => getRiskColour(d));
+
+      const ctx = document.getElementById("trendChart").getContext("2d");
+
+      trendChartInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label:                "Predicted FRP (MW)",
+            data:                 frpVals,
+            borderColor:          "rgba(255,255,255,0.3)",
+            borderWidth:          2,
+            pointBackgroundColor: colours,
+            pointBorderColor:     "#fff",
+            pointBorderWidth:     1.5,
+            pointRadius:          7,
+            pointHoverRadius:     10,
+            tension:              0.35,
+            fill:                 false,
+          }]
+        },
+        options: {
+          responsive:          true,
+          maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: "rgba(0,0,0,0.8)",
+              titleColor:      "#00bcd4",
+              bodyColor:       "#fff",
+              padding:         10,
+              callbacks: {
+                label(ctx) {
+                  const item = sorted[ctx.dataIndex];
+                  return [
+                    `FRP: ${ctx.parsed.y.toFixed(2)} MW`,
+                    `Risk: ${getRiskLabel(item)}`,
+                    `Lat: ${item.latitude.toFixed(4)}, Lon: ${item.longitude.toFixed(4)}`
+                  ];
+                }
+              }
+            },
+            // Dashed threshold lines via annotation plugin
+            annotation: {
+              annotations: {
+                smallLine: {
+                  type:        "line",
+                  yMin:        50,
+                  yMax:        50,
+                  borderColor: "#fbc02d",
+                  borderWidth: 1.5,
+                  borderDash:  [6, 4],
+                  label: {
+                    display:  true,
+                    content:  "Small (50 MW)",
+                    color:    "#fbc02d",
+                    font:     { size: 11 },
+                    position: "end",
+                    yAdjust:  -10,
+                  }
+                },
+                moderateLine: {
+                  type:        "line",
+                  yMin:        500,
+                  yMax:        500,
+                  borderColor: "#fd7e14",
+                  borderWidth: 1.5,
+                  borderDash:  [6, 4],
+                  label: {
+                    display:  true,
+                    content:  "Moderate (500 MW)",
+                    color:    "#fd7e14",
+                    font:     { size: 11 },
+                    position: "end",
+                    yAdjust:  -10,
+                  }
+                },
+                largeLine: {
+                  type:        "line",
+                  yMin:        2000,
+                  yMax:        2000,
+                  borderColor: "#d32f2f",
+                  borderWidth: 1.5,
+                  borderDash:  [6, 4],
+                  label: {
+                    display:  true,
+                    content:  "Large (2000 MW)",
+                    color:    "#d32f2f",
+                    font:     { size: 11 },
+                    position: "end",
+                    yAdjust:  -10,
+                  }
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color:         "#ccc",
+                maxRotation:   30,
+                font:          { size: 11 },
+                maxTicksLimit: 10,
+              },
+              grid: { color: "rgba(255,255,255,0.08)" }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color:    "#ccc",
+                callback: val => `${val} MW`
+              },
+              grid:  { color: "rgba(255,255,255,0.08)" },
+              title: {
+                display: true,
+                text:    "Fire Radiative Power (MW)",
+                color:   "#aaa",
+                font:    { size: 12 }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ── Toggle chart show/hide ─────────────────────────────
+    function toggleChart() {
+      const section = document.getElementById("chartSection");
+      const btn     = document.getElementById("toggleChartBtn");
+      chartVisible  = !chartVisible;
+
+      if (chartVisible) {
+        section.classList.remove("d-none");
+        btn.innerHTML = `<span><img src="{{ url_for('static', filename='images/undraw_financial-data_lbci.svg') }}"
+                   alt="" style="width:20px;height:20px;margin-right:8px;">Hide Risk Trend</span>`;
+        // Build only on first open
+        if (!trendChartInstance) buildChart();
+      } else {
+        section.classList.add("d-none");
+        btn.innerHTML = `<span><img src="{{ url_for('static', filename='images/undraw_visual-data_1eya.svg') }}"
+                   alt="" style="width:20px;height:20px;margin-right:8px;">Show Risk Trend</span>`;
       }
     }
 
     loadHistory();
   </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
