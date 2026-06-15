@@ -1,0 +1,22 @@
+
+# Large model/data files
+*.pkl
+*.joblib
+*.db
+*.csv
+*.h5
+*.parquet
+
+# Large model/data files
+*.pkl
+*.joblib
+*.db
+*.csv
+*.h5
+
+# Large model/data files - do not commit
+*.pkl
+*.joblib
+*.db
+*.h5
+*.parquet
