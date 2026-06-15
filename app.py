@@ -31,6 +31,8 @@ SECRET_KEY    = os.environ.get("SECRET_KEY", "fallback-dev-key-change-in-product
 GMAIL_USER    = os.environ.get("GMAIL_USER", "wildfirepredictor@gmail.com")
 GMAIL_PASS    = os.environ.get("GMAIL_APP_PASSWORD")   # set in .env — never hardcode
 DB_PATH       = os.environ.get("DB_PATH", "users.db")
+DEMO_MODE     = os.environ.get("DEMO_MODE", "false").lower() == "true"
+DEMO_OTP      = 123456   # fixed OTP shown to user in demo mode
 
 # ===========================================================
 #  Model Download — fetch from HuggingFace Hub if not local
@@ -189,13 +191,16 @@ def generate_otp():
         if not valid_email(email):
             return jsonify({"error": "Invalid email format"}), 400
 
-        otp = random.randint(100000, 999999)
+        otp = DEMO_OTP if DEMO_MODE else random.randint(100000, 999999)
 
         # Store OTP + generation time in session; never send OTP to client
-        session["otp"]            = otp
-        session["otp_email"]      = email
+        session["otp"]              = otp
+        session["otp_email"]        = email
         session["otp_generated_at"] = datetime.now(timezone.utc).isoformat()
-        session["otp_used"]       = False
+        session["otp_used"]         = False
+
+        if DEMO_MODE:
+            return jsonify({"message": f"Demo mode: use OTP {DEMO_OTP} (no email sent)"})
 
         success = send_otp_email(email, otp)
         if not success:
